@@ -1,26 +1,37 @@
 <?php
 class Servidor {
-    
-    function conexao(){
+
+    function __construct()
+    {
+        $rota = $_POST["rota"];
+        switch($rota)
+        {
+            case "index":
+                $this->getAll();
+            break;
+            case "new":
+                $this->save($_POST["cpf"], $_POST["voto"]);
+            break;
+        }
+        
+    }
+
+    function conexao($sql, $metodo){
          
         try
         {
             //Conectar
             $ligacao = new PDO("mysql:dbname=eleicao; host=localhost", "root", "");
-            $ligacao->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        
-            //Em caso de pesquisas, via procedures
-            //$pesq = "";
-            //$sql = "CALL Nome_da_procedure()";
-        
-            //Em caso de querys
-            $sql = "SELECT * FROM votacoes WHERE nome= :nome_param";
         
             $resultados = $ligacao->prepare($sql);
-        
-            //Definição de parâmetros
-            $resultados->bindParam(":nome_param", $pesq, PDO::PARAM_STR);
             $resultados->execute();
+            
+            if($resultados->execute()){
+                $data = $resultados->fetchAll();
+            } else{
+                $data = "erro";
+            }
+            return array("conexao" => true , "info" => $data);
         
         }
         catch(PDOException $erro)
@@ -28,4 +39,28 @@ class Servidor {
             echo $erro->getMessage();
         }
     }
+
+    function getAll(){
+        $sql = "SELECT count(*) FROM votacoes";
+        header('Content-Type: application/json; charset=utf-8');
+        $data = $this->conexao($sql, "getALL");
+        if ( $data["conexao"]){  
+            echo json_encode($data);
+        }else{
+            echo $data["conexao"];
+        }
+    }
+
+    function save($cpf, $voto){
+        $sql = "INSERT INTO votacoes (cpf, voto) values(:campo1, :campo2)";
+        header('Content-Type: application/json; charset=utf-8');
+        $data = $this->conexao($sql, "save");
+        if ( $data["conexao"]){  
+            echo json_encode($data);
+        }else{
+            echo $data["conexao"];
+        }
+    }
 }
+
+new Servidor();
